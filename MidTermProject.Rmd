@@ -1,0 +1,183 @@
+---
+title: "Untitled"
+output:
+  pdf_document: default
+  html_document: default
+date: "2023-02-14"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r cars}
+summary(cars)
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+```{r}
+#install.packages("dplyr")
+#install.packages("ggplot2")
+```
+```{r}
+library("dplyr")
+```
+```{r}
+library("ggplot2")
+```
+```{r}
+#We analyzed data of various categories for cities and produced below observations to discover the best cities for living 
+#Creating a vector from cities dataset
+cities = read.csv("C:/Users/pjina/OneDrive/Desktop/Cities with the Best Work-Life Balance 2022.csv")
+```
+```{r}
+#Creation of Data frame
+cities_df = data.frame(cities)
+colnames(cities)
+```
+```{r}
+#Creation of Matrix
+cities_matrix = as.matrix(cities)
+```
+```{r}
+#We are selecting the percentage of Remote jobs for every City and Country.
+#We have chose remote jobs because after the covid  more people are inclined towards the remote jobs.
+#select remote jobs column & arrange it in descending order
+mySelect = select(cities, Remote.Jobs, City:Country)
+
+#We have sorted the data selected before in descending order.
+#Based on the analysis, Singapore is the best city for the people looking to work remotely as it has the highest percentage of remote jobs.
+
+sorted<-arrange(mySelect,desc(Remote.Jobs))
+
+```
+```{r}
+#For sub setting we have used column Covid.Impact and displays the cities which have covid impact greater than 90% .
+#Dubai witnessed the highest covid impact across the globe.
+#Subset
+subset1 = subset(cities_df,subset = Covid.Impact > 90)
+```
+```{r}
+#We have filtered the cities in USA. Here we have displayed the cities with Happiness percentage greater than 80.
+#So we can consider San Francisco as the charming stone for living life with happiness by indulging in cultural & leisure activities
+####Top 10 cities in USA with highest % of happiness, leasure and culture###
+cityInUsa=filter(cities,Country=="USA")
+happinessINUSa=select(cityInUsa, Happiness..Culture...Leisure, City:Country)
+bestCityInUsa = filter(happinessINUSa,Happiness..Culture...Leisure > 80)
+SortedCities<-arrange(bestCityInUsa,desc(Happiness..Culture...Leisure))
+top10city=head(SortedCities,10)
+```
+```{r}
+#Pipe as the name suggests the combination of different function for better analysis.
+#To demonstrate pipe we have performed select on city and country columns with the sample function to display 10 random cities.
+#Top 10 cities in USA with highest % of happiness, leasure and culture using Pipe
+top10cityWithPipe = cities %>% arrange(desc(Happiness..Culture...Leisure)) %>% 
+  filter(Happiness..Culture...Leisure > 80) %>% 
+  select(Happiness..Culture...Leisure, City,Country) %>% 
+  filter(Country=="USA") %>% head(10)
+```
+```{r}
+#pipe for displaying 10 random cities
+random10City = cities %>% select(City, Country) %>% sample_n(10)
+```
+```{r}
+#mutate
+#We have used mutate to find the unhealthiness in various cities.
+#To implement mutate we have subtracted the percentage of wellness & fitness column from 100 and  stored it in unhelthinessInCIties column.
+#Eye-catching analysis of this data is that  unhealthiness is the major concern for the Oslo city even though having 100% healthcare facilities.
+UnhealthinessInCities = mutate(cities, Unhealthiness = 100 - Wellness.and.Fitness)
+mutate1= select(UnhealthinessInCities, City, Country, Unhealthiness)
+```
+
+```{r}
+#rank
+#For providing ranking based on the air quality of various cities we have used rank. 
+#From the analysis , it is crystal clear that Bern city of Switzerland has the best air quality in the world.
+#3 cities of Canada resides in the top 5 cities having the best air quality .
+
+RankByAirQuality = mutate_at(cities, vars(Air.Quality), 
+                             funs(Rank=min_rank(desc(.))))
+selectByRank=select(RankByAirQuality, City, Country, Rank)
+sortedByRank<-arrange(selectByRank,Rank)
+```
+```{r}
+###################### Pie Chart #################
+#52% of the cities has the covid impact between 70 to 80 percent which we considered as a Serious Zone.
+#3% of the cities fall under dead zone where the impact of covid is greater than 90%.
+sort_covid_impact<-arrange(cities_df,Covid.Impact)
+covidUseCase = select(cities_df,covid_impact=Covid.Impact, country=Country)
+zones <- c("Safe Zone", "Mild zone", "Serious Zone", "Fatal Zone", "Dead Zone")
+df1 = covidUseCase %>% filter(covid_impact < 60) %>% select(country) 
+df2 = covidUseCase %>% filter(covid_impact >= 60 & covid_impact < 70) %>% select(country)
+df3 = covidUseCase %>% filter(covid_impact >= 70 & covid_impact < 80) %>% select(country)
+df4 = covidUseCase %>% filter(covid_impact >= 80 & covid_impact < 90) %>% select(country)
+df5 = covidUseCase %>% filter(covid_impact >= 90) %>% select(country)
+count1 = count(df1)
+count2 = count(df2)
+count3 = count(df3)
+count4 = count(df4)
+count5 = count(df5)
+
+vec <- c(count1[1,1],count2[1,1], count3[1,1], count4[1,1], count5[1,1])
+
+count1 = paste(count1/count(cities_df)*100,"%")
+count2 = paste(count2/count(cities_df)*100,"%")
+count3 = paste(count3/count(cities_df)*100,"%")
+count4 = paste(count4/count(cities_df)*100,"%")
+count5 = paste(count5/count(cities_df)*100,"%")
+info <- c(count1, count2, count3, count4, count5)
+pie(vec, main = "Covid impact divided in to Zone",col.main="Black", font.main=4, 
+    labels = info, col=gray.colors(length(info)))
+legend(-2, 1.0, zones, cex=0.6, fill=gray.colors(length(zones)))
+```
+```{r}
+#Wellness and Fitness Score of cities in germany & visualization in plot chart#
+cityInGermany=filter(cities,Country=="Germany")
+wellnessINGermany=select(cityInGermany,Wellness.and.Fitness , City:Country)
+plot(wellnessINGermany$Wellness.and.Fitness, type="o", col="gold",
+     ylim = c(0, 100),axes=FALSE,ann=FALSE)
+axis(1, las=2, at = 1:9, lab= wellnessINGermany$City)
+box()
+axis(2, axes=TRUE)
+legend(x = 45, y = 999 ,legend = c("Wwllness and Fitness"),lty = 1, lwd = 1, fill=c(4))
+title(main="Wellness and Fitness Score in Germany", col.main="Black", font.main=4)
+```
+```{r}
+###finding unemployment in top 10 cities & bar plot of unemployed cities#
+UnEmploymentInCities = mutate(cities, UnEmployeMentIncity = 100 - Unemployment)
+selectedUnEmployed=select(UnEmploymentInCities, City, Country, UnEmployeMentIncity,TOTAL.SCORE)
+sortedByTotalScore<-arrange(selectedUnEmployed,desc(TOTAL.SCORE))
+TOp10CitiesByScore=head(sortedByTotalScore,10)
+TOp10CitiesByScoredf <- data.frame(City=c(TOp10CitiesByScore$City),
+                                   UnEmployment=c(TOp10CitiesByScore$UnEmployeMentIncity))
+
+ggplot(TOp10CitiesByScoredf, aes(x=City, y=UnEmployment,label=sprintf("%0.2f", round(UnEmployment, digits = 2))
+                                 ,fill=UnEmployment)) +
+  geom_bar(stat="identity")+theme(axis.text.x = element_text(angle = 90, hjust = 1))+
+  geom_text(vjust=1.5,size=3.5)
+
+```
+
+```{r}
+#Conclusion:
+#In this contemporary & busy era, people need to find the best city for living based on various categories.
+#Insights of our analysis helps us to use the concepts we learned in big data 2 subject and demonstrate it for getting some real life solutions and data analytical skills. 
+
+```
+
+
+
